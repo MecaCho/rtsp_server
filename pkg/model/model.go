@@ -9,11 +9,11 @@ type Device struct {
 	Name string `json:"name"`
 	State bool `json:"state"`
 	CameraStatus string `json:"camera_status"`
-	Attributes []Attribute `json:"attributes"`
+	Attributes map[string]Attribute `json:"attributes"`
 }
 type Attribute struct {
-	Key string `json:"key"`
 	Value string `json:"value"`
+	Optional bool `json:"optional"`
 	IsEncrypt bool `json:"is_encrypt"`
 }
 
@@ -35,7 +35,7 @@ type GroupEventType struct {
 type DeviceEvent struct {
 	BaseEvent
 	DeviceName string `json:"device_name"`
-	Attributes []Attribute `json:"attributes"`
+	Attributes map[string]Attribute `json:"attributes"`
 }
 
 type DeviceTwinEvent struct {
