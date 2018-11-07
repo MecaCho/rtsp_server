@@ -12,14 +12,15 @@ import (
 	"github.com/robfig/cron"
 	"github.com/satori/go.uuid"
 	"math/rand"
-	"net"
-	"os"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 	"glog"
+	"rtsp_server/pkg/common"
 )
+
+var syncMap sync.Map
 
 // Manager rtsp Client and device list
 type Manager struct {
@@ -28,29 +29,24 @@ type Manager struct {
 	FinishedInitLoad bool
 }
 
-// NewRTSPClient ...
-func NewRTSPClient(address string) (net.Conn, error) {
-	con, err := net.Dial("tcp", address)
-	if err != nil {
-		glog.Errorf("connect to remote camera err: %s.", err.Error())
-	}
-	return con, err
+func (m *Manager) deleteDevice(deviceID string) {
+	syncMap.Delete(deviceID)
 }
 
-func getHostName() string {
-	ret, err := os.Hostname()
-	if err != nil {
-		return ""
+func (m *Manager) updateDevice(deviceID string, deviceEventData model.DeviceEvent) {
+	dev := m.Devices[deviceID]
+	if deviceEventData.DeviceName != "" {
+		dev.Name = deviceEventData.DeviceName
 	}
-	return ret
+	dev.Attributes = deviceEventData.Attributes
+	m.Devices[deviceID] = dev
 }
 
-//GetClientID get mqtt broker clientID
-func GetClientID() string {
-	timeNow := time.Now().String()
-	tmpClient := []string{"camera_checker", getHostName(), timeNow}
-	return strings.Join(tmpClient, "#")
+func addDevice(deviceID string, device model.Device){
+	syncMap.Store(deviceID, device)
 }
+
+
 //GetDeviceAttributeValue get attribute value according to key
 func GetDeviceAttributeValue(key string, attributes []model.Attribute) (string, error) {
 	for _,v := range(attributes){
@@ -66,36 +62,6 @@ func GetDeviceAttributeValue(key string, attributes []model.Attribute) (string, 
 		}
 	}
 	return "",fmt.Errorf("Get device attribute value error : %s",key)
-}
-
-func (m *Manager) deleteDevice(deviceID string) {
-	delete(m.Devices, deviceID)
-}
-
-func (m *Manager) updateDevice(deviceID string, deviceEventData model.DeviceEvent) {
-	dev := m.Devices[deviceID]
-	if deviceEventData.DeviceName != "" {
-		dev.Name = deviceEventData.DeviceName
-	}
-	dev.Attributes = deviceEventData.Attributes
-	m.Devices[deviceID] = dev
-}
-
-//FormatLog gen format log output
-func FormatLog(logStirng string) string {
-	if len(logStirng) > 79 {
-		lens := len(logStirng) / 80
-		logLines := []string{}
-		logLines = append(logLines, "||"+logStirng[:80]+"||")
-		for i := 1; i < lens; i++ {
-			logLines = append(logLines, "                                                     ||"+logStirng[i*80:i*80+80]+"||")
-		}
-		logLines = append(logLines, fmt.Sprintf("                                                     ||%-80s||", logStirng[lens*80:]))
-		fmtLog := strings.Join(logLines, "\n")
-		return fmtLog
-	}
-	fmtLog := fmt.Sprintf("||%-80s||", logStirng)
-	return fmtLog
 }
 
 // DealCallbackMsg deal messages
@@ -166,7 +132,7 @@ func CheckRealCamera(dev model.Device) (bool, string) {
 
 // CheckCameraStatus check all camera status
 func (m *Manager) CheckCameraStatus() {
-	fmtLog := FormatLog("          --------------- Checking device status ... --------------")
+	fmtLog := common.FormatLog("          --------------- Checking device status ... --------------")
 	glog.Infof(fmtLog)
 	devNum := len(m.Devices)
 	var wg sync.WaitGroup
@@ -180,11 +146,11 @@ func (m *Manager) CheckCameraStatus() {
 			if config.CKconfig.Remote {
 				var checkLog string
 				copyDev.State, checkLog = CheckRealCamera(dev)
-				fmtLog := FormatLog(fmt.Sprintf("#Device(%q) , check result : (%t) , detail : %q ", dev.ID, copyDev.State, checkLog))
+				fmtLog := common.FormatLog(fmt.Sprintf("#Device(%q) , check result : (%t) , detail : %q ", dev.ID, copyDev.State, checkLog))
 				glog.Infof(fmtLog)
 			} else {
 				statusCode := rand.Intn(100)
-				fmtLog := FormatLog(fmt.Sprintf("Device (%q) response : (%d)", dev.ID, statusCode))
+				fmtLog := common.FormatLog(fmt.Sprintf("Device (%q) response : (%d)", dev.ID, statusCode))
 				glog.Infof(fmtLog)
 				if statusCode%2 == 0 {
 					ret = true
@@ -219,14 +185,14 @@ func StartServer() {
 //CheckWork check worker
 func (m *Manager)CheckWork() {
 	glog.Infoln(" ============================ Begin Checking ======================================")
-	fmtLog := FormatLog(fmt.Sprintf(" %s Checking camera status scheduler timestamp (%d)", time.Now().String(), time.Now().Unix()))
+	fmtLog := common.FormatLog(fmt.Sprintf(" %s Checking camera status scheduler timestamp (%d)", time.Now().String(), time.Now().Unix()))
 	glog.Infof(fmtLog)
 	m.CheckCameraStatus()
 	//tarval 更新状态
-	fmtLog = FormatLog(fmt.Sprintf("        ------------ Updating Camera Devices Status : ------------"))
+	fmtLog = common.FormatLog(fmt.Sprintf("        ------------ Updating Camera Devices Status : ------------"))
 	glog.Infof(fmtLog)
 	for k, v := range m.Devices {
-		fmtLog := FormatLog(fmt.Sprintf("Device (%q) status : (%#v) ", k, v))
+		fmtLog := common.FormatLog(fmt.Sprintf("Device (%q) status : (%#v) ", k, v))
 		glog.Infof(fmtLog)
 		deviceTwinData := &model.DeviceTwinEvent{}
 		deviceTwinData.EventType = config.DeviceTwinEventType
@@ -239,7 +205,7 @@ func (m *Manager)CheckWork() {
 
 		deviceJSON, _ := json.Marshal(deviceTwinData)
 		updatedDeviceTopic := strings.Replace(config.TopicUpdateTwinDevice, "<deviceID>", deviceTwinData.DeviceID, -1)
-		fmtLog = FormatLog(fmt.Sprintf("Publishing Devices Status , topic :(%q) msg: (%#v)", updatedDeviceTopic, string(deviceJSON)))
+		fmtLog = common.FormatLog(fmt.Sprintf("Publishing Devices Status , topic :(%q) msg: (%#v)", updatedDeviceTopic, string(deviceJSON)))
 		glog.Infof(fmtLog)
 		go m.MQTTClient.Publish(updatedDeviceTopic, string(deviceJSON))
 	}
@@ -332,7 +298,7 @@ func (m *Manager) newMQTTClient() (edgehub.Client, error) {
 
 	broker := fmt.Sprintf("tcp://%s", mqqtURL)
 	mqttOpts.AddBroker(broker)
-	clientID := GetClientID()
+	clientID := common.GetClientID()
 	glog.Infof("MQTT Client ID : (%q)", clientID)
 	mqttOpts.SetClientID(clientID)
 	mqttOpts.SetUsername(config.CKconfig.MqttUsername)
