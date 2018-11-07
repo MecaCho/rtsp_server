@@ -1,6 +1,9 @@
 package config
 
-import "flag"
+import (
+	"flag"
+	_ "glog"
+	)
 
 type config struct {
 	EdgeGroupID string
@@ -26,14 +29,16 @@ func init() {
 }
 
 const (
-	TopicGetDevices = "node/<EdgeGroupID>/membership/get"
-	TopicGetDevicesResult = "node/<EdgeGroupID>/membership/get/result"
+	TopicGetDevices = "node/<edgeGroupID>/membership/get"
+	TopicGetDevicesResult = "node/<edgeGroupID>/membership/get/result"
+	TopicUpdatedDevices = "node/<edgeGroupID>/update"
+
 	TopicUpdatedDevice = "device/<deviceID>/update"
-	TopicDeletedDevice = "device/<deviceID>/update"
-	TopicUpdatedDevices = "device/<deviceID>/update"
+	TopicDeletedDevice = "device/<deviceID>/delete"
+
 	TopicUpdateTwinDevice = ""
 
-	DeviceTwinEventType = ""
-	UpdatedOperationType = ""
-	GroupEventType = ""
+	DeviceTwinEventType = "device_twin"
+	UpdatedOperationType = "update"
+	GroupEventType = "node"
 )

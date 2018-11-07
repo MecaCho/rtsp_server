@@ -1,0 +1,17 @@
+{
+  "topic": "",
+  "msg": {
+    "event_type" :"node",
+    "devices": [
+      {
+        "id": "ID",
+        "name": "Name",
+        "state": false,
+        "camera_status": "false",
+        "attributes":{
+          "address": {"value": "192.0.0.1"}
+        }
+      }
+    ]
+  }
+}

@@ -85,9 +85,11 @@ func (m *Manager) DealCallbackMsg(topic string, payload []byte) error {
 		glog.Errorf("json parse topic:%s data failed.", topic)
 		return err
 	}
+	glog.Infoln("000000000000000000")
 
 	switch baseEventData.EventType {
 	case config.GroupEventType:
+		glog.Infoln("111111111111111111111", string(payload))
 		groupEventData := &model.GroupMembershipEvent{}
 		err := json.Unmarshal(payload, groupEventData)
 		if err != nil {

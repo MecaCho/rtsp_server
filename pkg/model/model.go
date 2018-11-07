@@ -1,9 +1,5 @@
 package model
 
-type GroupMembershipEvent struct {
-	MemberShip
-}
-
 type Device struct {
 	ID string `json:"id"`
 	Name string `json:"name"`
@@ -15,6 +11,11 @@ type Attribute struct {
 	Value string `json:"value"`
 	Optional bool `json:"optional"`
 	IsEncrypt bool `json:"is_encrypt"`
+}
+
+type GroupMembershipEvent struct {
+	BaseEvent
+	MemberShip
 }
 
 type MemberShip struct {
