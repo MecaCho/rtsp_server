@@ -94,8 +94,8 @@ func CheckRealCamera(dev model.Device) (bool, string) {
 	return true, checkingLog
 }
 
-// CheckCameraStatus ...
-func (m *Manager) CheckCameraStatus() {
+// CheckAllCameraStatus ...
+func (m *Manager) CheckAllCameraStatus() {
 	fmtLog := common.FormatLog("          --------------- Checking device status ... --------------")
 	glog.Infof(fmtLog)
 	devNum := 0
@@ -167,7 +167,7 @@ func (m *Manager) serverInit() {
 		glog.Infof("Subscribed topic: (%q), with msg: (%q) successfully ,got devices info result , \n", config.TopicGetDevicesResult, msg.Payload())
 		topic := msg.Topic()
 		payload := msg.Payload()
-		go m.DealCallbackMsg(topic, payload)
+		go m.DealMembershipMsg(topic, payload)
 	})
 	glog.Infoln("Loading devices info ...")
 	RetryTime := 1
@@ -199,7 +199,7 @@ func (m *Manager)CheckWork() {
 	glog.Infoln(" ============================ Begin Checking ======================================")
 	fmtLog := common.FormatLog(fmt.Sprintf(" %s Checking camera status scheduler timestamp (%d)", time.Now().String(), time.Now().Unix()))
 	glog.Infof(fmtLog)
-	m.CheckCameraStatus()
+	m.CheckAllCameraStatus()
 	fmtLog = common.FormatLog(fmt.Sprintf("        ------------ Updating Camera Devices Status : ------------"))
 	glog.Infof(fmtLog)
 	syncMap.Range(func(key, value interface{}) bool {
@@ -225,8 +225,8 @@ func (m *Manager)CheckWork() {
 	glog.Infoln("============================== Finished Checking ===================================")
 }
 
-// DealCallbackMsg deal messages
-func (m *Manager) DealCallbackMsg(topic string, payload []byte) error {
+// DealMembershipMsg ...
+func (m *Manager) DealMembershipMsg(topic string, payload []byte) error {
 	baseEventData := &model.BaseEvent{}
 	err := json.Unmarshal(payload, baseEventData)
 	if err != nil {
