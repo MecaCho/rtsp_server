@@ -3,10 +3,11 @@ package config
 import (
 	"flag"
 	_ "glog"
-	)
+	"fmt"
+)
 
 type config struct {
-	EdgeGroupID string
+	NodeID string
 	MqttURL string
 	MqttUsername string
 	MqttPassword string
@@ -16,27 +17,30 @@ type config struct {
 }
 
 var CKconfig config
+var (
+	TopicGetDevices = fmt.Sprintf("node/%s/membership/get", CKconfig.NodeID)
+	TopicGetDevicesResult = fmt.Sprintf("node/%s/membership/get/result", CKconfig.NodeID)
+	TopicUpdatedDevices = fmt.Sprintf("node/%s/update", CKconfig.NodeID)
+)
 
 func init() {
-	flag.StringVar(&CKconfig.EdgeGroupID, "node_id", "", "node id.")
+	flag.StringVar(&CKconfig.NodeID, "node_id", "", "node id.")
 	flag.StringVar(&CKconfig.MqttURL, "mqtt-url", "127.0.0.1:1883", "mqtt url, default 127.0.0.1:1883.")
-	flag.StringVar(&CKconfig.MqttUsername, "mqtt-user", "qwq", "mqtt user name.")
-	flag.StringVar(&CKconfig.MqttPassword, "mqtt-pwd", "qwq", "mqtt password.")
-	flag.IntVar(&CKconfig.CheckCameraSec, "check-camera-interval", 60, "camera checker server interval.")
+	flag.IntVar(&CKconfig.CheckCameraSec, "check-camera-interval", 20, "camera checker server interval.")
 	flag.IntVar(&CKconfig.MqttRetries, "mqtt-retry-time", 60, "mqtt client retry times.")
 	flag.BoolVar(&CKconfig.Remote, "check-remote-camera", false, "check real camera.")
 	flag.Parse()
+	TopicGetDevices = fmt.Sprintf("node/%s/membership/get", CKconfig.NodeID)
+	TopicGetDevicesResult = fmt.Sprintf("node/%s/membership/get/result", CKconfig.NodeID)
+	TopicUpdatedDevices = fmt.Sprintf("node/%s/update", CKconfig.NodeID)
 }
 
-const (
-	TopicGetDevices = "node/<edgeGroupID>/membership/get"
-	TopicGetDevicesResult = "node/<edgeGroupID>/membership/get/result"
-	TopicUpdatedDevices = "node/<edgeGroupID>/update"
+var (
 
-	TopicUpdatedDevice = "device/<deviceID>/update"
-	TopicDeletedDevice = "device/<deviceID>/delete"
+	TopicUpdatedDevice = "device/%s/update"
+	TopicDeletedDevice = "device/%s/delete"
 
-	TopicUpdateTwinDevice = ""
+	TopicUpdateTwinDevice = "device/%s/twin/update"
 
 	DeviceTwinEventType = "device_twin"
 	UpdatedOperationType = "update"

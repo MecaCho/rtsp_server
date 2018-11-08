@@ -1,12 +1,10 @@
-package edgehub
+package mqtt_client
 
 import (
 	MQTT "github.com/eclipse/paho.mqtt.golang"
 )
 
-const (
-	qosClient  = 0x02
-	)
+const qosClient  = 0x02
 
 type Client interface {
 	Connect() error
