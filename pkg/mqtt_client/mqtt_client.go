@@ -1,15 +1,13 @@
 package mqtt_client
 
 import (
-	"glog"
-	"rtsp_server/pkg/config"
-	"rtsp_server/pkg/common"
-	MQTT "github.com/eclipse/paho.mqtt.golang"
-	"time"
 	"fmt"
+	MQTT "github.com/eclipse/paho.mqtt.golang"
+	"glog"
+	"rtsp_server/pkg/common"
+	"rtsp_server/pkg/config"
+	"time"
 )
-
-
 
 func ConnectMQTTClient() Client {
 	retriesNumber := config.CKconfig.MqttRetries
@@ -49,7 +47,6 @@ func newMQTTClient() (Client, error) {
 	mqttOpts.SetPingTimeout(10 * time.Second)
 
 	mqttOpts.SetCleanSession(false)
-
 
 	client := &DefaultClient{
 		Mqtt: MQTT.NewClient(mqttOpts),

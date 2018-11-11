@@ -1,11 +1,11 @@
 package main
 
 import (
-	"rtsp_server"
 	"glog"
+	"rtsp_server"
 )
 
-func main(){
+func main() {
 	checker.StartServer()
 	glog.Infoln("Start Camera Checker...")
 }

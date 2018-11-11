@@ -2,63 +2,60 @@ package rtspclient
 
 import (
 	"crypto/md5"
-	"encoding/hex"
-	"strings"
-	"fmt"
-	"net"
-	"strconv"
-	"log"
-	"time"
-	"io"
-	"net/url"
 	b64 "encoding/base64"
+	"encoding/hex"
+	"fmt"
+	"io"
+	"log"
+	"net"
+	"net/url"
+	"strconv"
+	"strings"
+	"time"
 )
 
 type RtspClient struct {
 	socket   net.Conn
-	outgoing chan []byte 
-	signals  chan bool   
-	host     string      
-	port     string      
-	uri      string      
-	auth     bool        
+	outgoing chan []byte
+	signals  chan bool
+	host     string
+	port     string
+	uri      string
+	auth     bool
 	login    string
-	password string   
-	session  string   
-	responce string   
-	bauth    string   
-	track    []string 
-	cseq     int      
+	password string
+	session  string
+	responce string
+	bauth    string
+	track    []string
+	cseq     int
 	videow   int
 	videoh   int
 }
 
-
 func RtspClientNew() *RtspClient {
 	Obj := &RtspClient{
-		cseq:     1,                         
-		signals:  make(chan bool, 1),        
-		outgoing: make(chan []byte, 100000), 
+		cseq:     1,
+		signals:  make(chan bool, 1),
+		outgoing: make(chan []byte, 100000),
 	}
 	return Obj
 }
 
-
 func (this *RtspClient) Client(rtsp_url string) (bool, string) {
-	
+
 	if !this.ParseUrl(rtsp_url) {
 		return false, "Не верный url"
 	}
-	
+
 	if !this.Connect() {
 		return false, "Не возможно подключиться"
 	}
-	
-	
+
 	if !this.Write("OPTIONS " + this.uri + " RTSP/1.0\r\nCSeq: " + strconv.Itoa(this.cseq) + "\r\n\r\n") {
 		return false, "Не возможно отправить сообщение OPTIONS"
 	}
-	
+
 	if status, message := this.Read(); !status {
 		return false, "Не возможно прочитать ответ OPTIONS соединение потеряно"
 	} else if status && strings.Contains(message, "Digest") {
@@ -73,7 +70,6 @@ func (this *RtspClient) Client(rtsp_url string) (bool, string) {
 		return false, "Ошибка OPTIONS not status code 200 OK " + message
 	}
 
-	
 	log.Println("DESCRIBE " + this.uri + " RTSP/1.0\r\nCSeq: " + strconv.Itoa(this.cseq) + this.bauth + "\r\n\r\n")
 	if !this.Write("DESCRIBE " + this.uri + " RTSP/1.0\r\nCSeq: " + strconv.Itoa(this.cseq) + this.bauth + "\r\n\r\n") {
 		return false, "Не возможно отправть запрос DESCRIBE"
@@ -98,7 +94,7 @@ func (this *RtspClient) Client(rtsp_url string) (bool, string) {
 	if len(this.track) == 0 {
 		return false, "Ошибка track not found "
 	}
-	
+
 	log.Println("SETUP " + this.uri + "/" + this.track[0] + " RTSP/1.0\r\nCSeq: " + strconv.Itoa(this.cseq) + "\r\nTransport: RTP/AVP/TCP;unicast;interleaved=0-1" + this.bauth + "\r\n\r\n")
 	if !this.Write("SETUP " + this.uri + "/" + this.track[0] + " RTSP/1.0\r\nCSeq: " + strconv.Itoa(this.cseq) + "\r\nTransport: RTP/AVP/TCP;unicast;interleaved=0-1" + this.bauth + "\r\n\r\n") {
 		return false, ""
@@ -164,7 +160,6 @@ func (this *RtspClient) Client(rtsp_url string) (bool, string) {
 		}
 	}
 
-	
 	log.Println("PLAY " + this.uri + " RTSP/1.0\r\nCSeq: " + strconv.Itoa(this.cseq) + "\r\nSession: " + this.session + this.bauth + "\r\n\r\n")
 	if !this.Write("PLAY " + this.uri + " RTSP/1.0\r\nCSeq: " + strconv.Itoa(this.cseq) + "\r\nSession: " + this.session + this.bauth + "\r\n\r\n") {
 		return false, ""
@@ -173,7 +168,7 @@ func (this *RtspClient) Client(rtsp_url string) (bool, string) {
 		return false, "Не возможно прочитать ответ PLAY соединение потеряно"
 
 	} else if !strings.Contains(message, "200") {
-		
+
 		if strings.Contains(message, "401") {
 			str := this.AuthDigest_Only("PLAY", message)
 			if !this.Write("PLAY " + this.uri + " RTSP/1.0\r\nCSeq: " + strconv.Itoa(this.cseq) + "\r\nSession: " + this.session + this.bauth + str + "\r\n\r\n") {
@@ -187,7 +182,7 @@ func (this *RtspClient) Client(rtsp_url string) (bool, string) {
 				return false, "Ошибка PLAY not status code 200 OK " + message
 
 			} else {
-				
+
 				log.Print(message)
 				go this.RtspRtpLoop()
 				return true, "ok"
@@ -209,7 +204,7 @@ func (this *RtspClient) RtspRtpLoop() {
 	}()
 	header := make([]byte, 4)
 	payload := make([]byte, 4096)
-	
+
 	sync_b := make([]byte, 1)
 	timer := time.Now()
 	for {
@@ -220,16 +215,16 @@ func (this *RtspClient) RtspRtpLoop() {
 			timer = time.Now()
 		}
 		this.socket.SetDeadline(time.Now().Add(50 * time.Second))
-		
+
 		if n, err := io.ReadFull(this.socket, header); err != nil || n != 4 {
-			
+
 			return
 		}
-		
+
 		if header[0] != 36 {
-			
+
 			for {
-				
+
 				if n, err := io.ReadFull(this.socket, sync_b); err != nil && n != 1 {
 					return
 				} else if sync_b[0] == 36 {
@@ -243,7 +238,7 @@ func (this *RtspClient) RtspRtpLoop() {
 		}
 
 		payloadLen := (int)(header[2])<<8 + (int)(header[3])
-		
+
 		if payloadLen > 4096 || payloadLen < 12 {
 			log.Println("desync", this.uri, payloadLen)
 			return
@@ -257,9 +252,8 @@ func (this *RtspClient) RtspRtpLoop() {
 
 }
 
-
 func (this *RtspClient) SendBufer(bufer []byte) {
-	
+
 	payload := make([]byte, 4096)
 	for {
 		if len(bufer) < 4 {

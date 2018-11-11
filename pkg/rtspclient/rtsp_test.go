@@ -1,10 +1,10 @@
 package rtspclient
 
 import (
-	"log"
-	"flag"
-	"os"
 	"encoding/gob"
+	"flag"
+	"log"
+	"os"
 )
 
 var (

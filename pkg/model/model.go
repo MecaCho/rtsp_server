@@ -1,16 +1,16 @@
 package model
 
 type Device struct {
-	ID string `json:"id"`
-	Name string `json:"name"`
-	State bool `json:"state"`
-	CameraStatus string `json:"camera_status"`
-	Attributes map[string]Attribute `json:"attributes"`
+	ID           string               `json:"id"`
+	Name         string               `json:"name"`
+	State        bool                 `json:"state"`
+	CameraStatus string               `json:"camera_status"`
+	Attributes   map[string]Attribute `json:"attributes"`
 }
 type Attribute struct {
-	Value string `json:"value"`
-	Optional bool `json:"optional"`
-	IsEncrypt bool `json:"is_encrypt"`
+	Value     string `json:"value"`
+	Optional  bool   `json:"optional"`
+	IsEncrypt bool   `json:"is_encrypt"`
 }
 
 type GroupMembershipEvent struct {
@@ -19,8 +19,8 @@ type GroupMembershipEvent struct {
 }
 
 type MemberShip struct {
-	Devices []Device `json:"devices"`
-	AddedDevices []Device `json:"added_devices"`
+	Devices        []Device `json:"devices"`
+	AddedDevices   []Device `json:"added_devices"`
 	RemovedDevices []Device `json:"removed_devices"`
 }
 
@@ -30,27 +30,25 @@ type BaseEvent struct {
 
 type GroupEventType struct {
 	BaseEvent
-
 }
 
 type DeviceEvent struct {
 	BaseEvent
-	DeviceName string `json:"device_name"`
+	DeviceName string               `json:"device_name"`
 	Attributes map[string]Attribute `json:"attributes"`
 }
 
 type DeviceTwinEvent struct {
-	EventType string `json:"event_type"`
+	EventType  string `json:"event_type"`
 	DeviceName string `json:"device_name"`
-	DeviceID string `json:"device_id"`
-	Operation string `json:"operation"`
-	Timestamp int64 `json:"timestamp"`
-	Twin Twin `json:"twin"`
+	DeviceID   string `json:"device_id"`
+	Operation  string `json:"operation"`
+	Timestamp  int64  `json:"timestamp"`
+	Twin       Twin   `json:"twin"`
 }
 
 type Twin struct {
 	Actual map[string]string `json:"actual"`
-
 }
 
 type EdgeGet struct {

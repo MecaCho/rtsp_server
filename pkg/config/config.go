@@ -2,25 +2,25 @@ package config
 
 import (
 	"flag"
-	_ "glog"
 	"fmt"
+	_ "glog"
 )
 
 type config struct {
-	NodeID string
-	MqttURL string
-	MqttUsername string
-	MqttPassword string
+	NodeID         string
+	MqttURL        string
+	MqttUsername   string
+	MqttPassword   string
 	CheckCameraSec int
-	MqttRetries int
-	Remote bool
+	MqttRetries    int
+	Remote         bool
 }
 
 var CKconfig config
 var (
-	TopicGetDevices = fmt.Sprintf("node/%s/membership/get", CKconfig.NodeID)
+	TopicGetDevices       = fmt.Sprintf("node/%s/membership/get", CKconfig.NodeID)
 	TopicGetDevicesResult = fmt.Sprintf("node/%s/membership/get/result", CKconfig.NodeID)
-	TopicUpdatedDevices = fmt.Sprintf("node/%s/update", CKconfig.NodeID)
+	TopicUpdatedDevices   = fmt.Sprintf("node/%s/update", CKconfig.NodeID)
 )
 
 func init() {
@@ -36,18 +36,17 @@ func init() {
 }
 
 var (
-
 	TopicUpdatedDevice = "device/%s/update"
 	TopicDeletedDevice = "device/%s/delete"
 
 	TopicUpdateTwinDevice = "device/%s/twin/update"
 
-	DeviceTwinEventType = "device_twin"
+	DeviceTwinEventType  = "device_twin"
 	UpdatedOperationType = "update"
-	GroupEventType = "node"
+	GroupEventType       = "node"
 )
 
 const (
-	CameraStatusOn = "Online"
+	CameraStatusOn  = "Online"
 	CameraStatusOff = "Offline"
 )

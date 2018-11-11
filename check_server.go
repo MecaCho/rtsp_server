@@ -1,34 +1,34 @@
 package checker
 
 import (
-	"rtsp_server/pkg/config"
-	"rtsp_server/pkg/mqtt_client"
-	"rtsp_server/pkg/model"
-	"rtsp_server/pkg/rtspclient"
 	"encoding/json"
 	"fmt"
 	MQTT "github.com/eclipse/paho.mqtt.golang"
 	"github.com/robfig/cron"
+	"glog"
 	"math/rand"
+	"rtsp_server/pkg/common"
+	"rtsp_server/pkg/config"
+	"rtsp_server/pkg/model"
+	"rtsp_server/pkg/mqtt_client"
+	"rtsp_server/pkg/rtspclient"
 	"strconv"
 	"sync"
 	"time"
-	"glog"
-	"rtsp_server/pkg/common"
 )
 
 var syncMap sync.Map
 
 // Manager ...
 type Manager struct {
-	MQTTClient mqtt_client.Client
+	MQTTClient       mqtt_client.Client
 	FinishedInitLoad bool
 }
 
 func getDevice(deviceID string) model.Device {
 	var nilDev model.Device
 	dev, ok := syncMap.Load(deviceID)
-	if ok{
+	if ok {
 		nilDev = dev.(model.Device)
 	}
 	return nilDev
@@ -41,14 +41,14 @@ func deleteDevice(deviceID string) {
 func updateDevice(deviceID string, deviceEventData model.DeviceEvent) {
 	var newDev model.Device
 	dev, ok := syncMap.Load(deviceID)
-	if ok{
+	if ok {
 		newDev = dev.(model.Device)
 	}
 	if deviceEventData.DeviceName != "" {
 		newDev.Name = deviceEventData.DeviceName
 	}
-	for k, v := range(deviceEventData.Attributes){
-		if newDev.Attributes == nil{
+	for k, v := range deviceEventData.Attributes {
+		if newDev.Attributes == nil {
 			newDev.Attributes = make(map[string]model.Attribute)
 		}
 		newDev.Attributes[k] = v
@@ -56,10 +56,9 @@ func updateDevice(deviceID string, deviceEventData model.DeviceEvent) {
 	syncMap.Store(deviceID, newDev)
 }
 
-func addDevice(deviceID string, device model.Device){
+func addDevice(deviceID string, device model.Device) {
 	syncMap.Store(deviceID, device)
 }
-
 
 //GetDeviceAttributeValue ...
 func GetDeviceAttributeValue(attribute model.Attribute) (string, error) {
@@ -71,7 +70,7 @@ func GetDeviceAttributeValue(attribute model.Attribute) (string, error) {
 		}
 		return "", err
 	}
-	return v.Value,nil
+	return v.Value, nil
 }
 
 //CheckRealCamera ...
@@ -82,7 +81,7 @@ func CheckRealCamera(dev model.Device) (bool, string) {
 	//	checkingLog = "Can not Get Device Attribute Value (CameraURL) " + err.Error()
 	//	return false, checkingLog
 	//}
-	if cameraUrlAttri, ok := dev.Attributes["CameraURL"]; !ok{
+	if cameraUrlAttri, ok := dev.Attributes["CameraURL"]; !ok {
 		return false, fmt.Sprintf("CameraURL attribute NOT FOUND in device attributes (%s).", cameraUrlAttri)
 	}
 
@@ -138,8 +137,8 @@ func (m *Manager) CheckAllCameraStatus() {
 		}(id, device)
 		return true
 	})
-	for i := 0; i < devNum; i ++ {
-		 <-done
+	for i := 0; i < devNum; i++ {
+		<-done
 	}
 }
 
@@ -170,7 +169,7 @@ func (m *Manager) serverInit() {
 	var detailGet model.EdgeGet
 	detailGet.EventID = common.GetUUID()
 	cont, _ := json.Marshal(detailGet)
-	time.Sleep(3*time.Second)
+	time.Sleep(3 * time.Second)
 	m.MQTTClient.Publish(config.TopicGetDevices, string(cont))
 	glog.Infof("Subscribing topic (%q) , try to geting devices info result \n", config.TopicGetDevicesResult)
 	m.MQTTClient.Subscribe(config.TopicGetDevicesResult, func(mqtt MQTT.Client, msg MQTT.Message) {
@@ -205,7 +204,7 @@ func (m *Manager) serverInit() {
 }
 
 //CheckWork ...
-func (m *Manager)CheckWork() {
+func (m *Manager) CheckWork() {
 	glog.Infoln(" ============================ Begin Checking ======================================")
 	fmtLog := common.FormatLog(fmt.Sprintf(" %s Checking camera status scheduler timestamp (%d)", time.Now().String(), time.Now().Unix()))
 	glog.Infof(fmtLog)
@@ -273,7 +272,7 @@ func (m *Manager) subscribeDeviceUpdate(deviceID string) {
 }
 
 //DealUpdateDeviceMsg ...
-func (m *Manager)DealUpdateDeviceMsg(msg []byte, deviceID string){
+func (m *Manager) DealUpdateDeviceMsg(msg []byte, deviceID string) {
 	glog.Infof("Updating device (%q) , msg detail :(%q)\n", deviceID, string(msg))
 	deviceEventData := model.DeviceEvent{}
 	err := json.Unmarshal(msg, &deviceEventData)
@@ -284,7 +283,7 @@ func (m *Manager)DealUpdateDeviceMsg(msg []byte, deviceID string){
 }
 
 //DealDeleteDeviceMsg ...
-func (m *Manager)DealDeleteDeviceMsg(msg []byte, deviceID string) {
+func (m *Manager) DealDeleteDeviceMsg(msg []byte, deviceID string) {
 	glog.Infof("Deleting device (%q) , msg detail :(%q)\n", deviceID, string(msg))
 	deviceEventData := &model.DeviceEvent{}
 	err := json.Unmarshal(msg, deviceEventData)
@@ -296,13 +295,13 @@ func (m *Manager)DealDeleteDeviceMsg(msg []byte, deviceID string) {
 
 func (m *Manager) subscribeNodeUpdate(NodeID string) {
 	glog.Infof("Subscribing topic (%q) , update all devices in node (%q)\n", config.TopicUpdatedDevices, NodeID)
-	m.MQTTClient.Subscribe(config.TopicUpdatedDevices, func(mqtt MQTT.Client, msg MQTT.Message){
+	m.MQTTClient.Subscribe(config.TopicUpdatedDevices, func(mqtt MQTT.Client, msg MQTT.Message) {
 		m.DealUpdateDevices(msg.Payload())
 	})
 }
 
 //DealUpdateDevices ...
-func (m *Manager)DealUpdateDevices(msg []byte) {
+func (m *Manager) DealUpdateDevices(msg []byte) {
 	glog.Infof("Subscribed TopicUpdatedDevices with msg: (%q) successfully ,updating all devices info in node\n", string(msg))
 	groupEventData := model.GroupMembershipEvent{}
 	err := json.Unmarshal(msg, &groupEventData)

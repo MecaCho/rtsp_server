@@ -2,10 +2,10 @@ package common
 
 import (
 	"fmt"
-	"strings"
-	"os"
-	"time"
 	"github.com/satori/go.uuid"
+	"os"
+	"strings"
+	"time"
 )
 
 func GetUUID() string {
@@ -27,7 +27,6 @@ func getHostName() string {
 	}
 	return ret
 }
-
 
 //FormatLog ...
 func FormatLog(logStirng string) string {
