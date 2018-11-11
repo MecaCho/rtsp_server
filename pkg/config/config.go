@@ -46,3 +46,8 @@ var (
 	UpdatedOperationType = "update"
 	GroupEventType = "node"
 )
+
+const (
+	CameraStatusOn = "Online"
+	CameraStatusOff = "Offline"
+)

@@ -77,17 +77,21 @@ func GetDeviceAttributeValue(attribute model.Attribute) (string, error) {
 //CheckRealCamera ...
 func CheckRealCamera(dev model.Device) (bool, string) {
 	var checkingLog string
-	address, err := GetDeviceAttributeValue(dev.Attributes["address"])
-	if err != nil {
-		checkingLog = "Can not Get Device Attribute Value (CameraURL) " + err.Error()
-		return false, checkingLog
+	//address, err := GetDeviceAttributeValue(dev.Attributes["address"])
+	//if err != nil {
+	//	checkingLog = "Can not Get Device Attribute Value (CameraURL) " + err.Error()
+	//	return false, checkingLog
+	//}
+	if cameraUrlAttri, ok := dev.Attributes["CameraURL"]; !ok{
+		return false, fmt.Sprintf("CameraURL attribute NOT FOUND in device attributes (%s).", cameraUrlAttri)
 	}
+
 	CameraURL, err := GetDeviceAttributeValue(dev.Attributes["CameraURL"])
 	if err != nil {
 		checkingLog = "Can not Get Device Attribute Value (CameraURL) " + err.Error()
 		return false, checkingLog
 	}
-	checkingLog, err = rtspclient.CheckMain(address, CameraURL)
+	checkingLog, err = rtspclient.CheckMain(CameraURL)
 	if err != nil {
 		return false, checkingLog + " Error : " + err.Error()
 	}
@@ -96,7 +100,7 @@ func CheckRealCamera(dev model.Device) (bool, string) {
 
 // CheckAllCameraStatus ...
 func (m *Manager) CheckAllCameraStatus() {
-	fmtLog := common.FormatLog("          --------------- Checking device status ... --------------")
+	fmtLog := common.FormatLog("          --------------- Begining Checking device status ... --------------")
 	glog.Infof(fmtLog)
 	devNum := 0
 	done := make(chan bool)
@@ -105,12 +109,13 @@ func (m *Manager) CheckAllCameraStatus() {
 		id := key.(string)
 		device := value.(model.Device)
 		go func(deviceId string, dev model.Device) {
+			glog.Infof(common.FormatLog(fmt.Sprintf("Checking device %s, id : %s", dev.Name, deviceId)))
 			copyDev := getDevice(deviceId)
 			var ret bool
 			if config.CKconfig.Remote {
 				var checkLog string
-				copyDev.State, checkLog = CheckRealCamera(dev)
-				fmtLog := common.FormatLog(fmt.Sprintf("Device(%q) , check result : (%t) , detail : %q ", dev.ID, copyDev.State, checkLog))
+				ret, checkLog = CheckRealCamera(dev)
+				fmtLog := common.FormatLog(fmt.Sprintf("Device (%q) , check result : (%t) , detail : %q ", dev.ID, ret, checkLog))
 				glog.Infof(fmtLog)
 			} else {
 				statusCode := rand.Intn(100)
@@ -121,7 +126,12 @@ func (m *Manager) CheckAllCameraStatus() {
 				} else {
 					ret = false
 				}
-				copyDev.State = ret
+
+			}
+			if ret {
+				copyDev.CameraStatus = config.CameraStatusOn
+			} else {
+				copyDev.CameraStatus = config.CameraStatusOff
 			}
 			addDevice(deviceId, copyDev)
 			done <- ret
@@ -204,7 +214,7 @@ func (m *Manager)CheckWork() {
 	glog.Infof(fmtLog)
 	syncMap.Range(func(key, value interface{}) bool {
 		k, v := key.(string), value.(model.Device)
-		fmtLog := common.FormatLog(fmt.Sprintf("Device (%q) status : (%#v) ", k, v))
+		fmtLog := common.FormatLog(fmt.Sprintf("Device (%q), state : (%v), cameraStatus : (%q). ", k, v.State, v.CameraStatus))
 		glog.Infof(fmtLog)
 		deviceTwinData := &model.DeviceTwinEvent{}
 		deviceTwinData.EventType = config.DeviceTwinEventType
@@ -226,43 +236,27 @@ func (m *Manager)CheckWork() {
 }
 
 // DealMembershipMsg ...
-func (m *Manager) DealMembershipMsg(topic string, payload []byte) error {
+func (m *Manager) DealMembershipMsg(topic string, payload []byte) {
 	baseEventData := &model.BaseEvent{}
 	err := json.Unmarshal(payload, baseEventData)
 	if err != nil {
 		glog.Errorf("Json parse ERROR, topic: (%s) .", topic)
-		return err
 	}
-	switch baseEventData.EventType {
-	case config.GroupEventType:
-		groupEventData := &model.GroupMembershipEvent{}
-		err := json.Unmarshal(payload, groupEventData)
-		if err != nil {
-			glog.Errorf("json parse topic:%s data failed.", topic)
-		}
-		if groupEventData.MemberShip.Devices != nil {
-			for i := range groupEventData.MemberShip.Devices {
-				device := groupEventData.MemberShip.Devices[i]
-				addDevice(device.ID, device)
-				glog.Infof("Get devices msg , device : (%s).", device.ID)
-				go m.subscribeDeviceUpdate(device.ID)
-			}
-			m.FinishedInitLoad = true
-		}
-		for i := range groupEventData.MemberShip.AddedDevices {
-			device := groupEventData.MemberShip.AddedDevices[i]
-			glog.Infof("Get add devices msg , device : (%s)", device.ID)
+	groupEventData := &model.GroupMembershipEvent{}
+	err = json.Unmarshal(payload, groupEventData)
+	if err != nil {
+		glog.Errorf("Json parse topic (%s) ERROR.", topic)
+	}
+	if groupEventData.MemberShip.Devices != nil {
+		for i := range groupEventData.MemberShip.Devices {
+			device := groupEventData.MemberShip.Devices[i]
 			addDevice(device.ID, device)
+			glog.Infof("Get devices msg , device : (%s).", device.ID)
 			go m.subscribeDeviceUpdate(device.ID)
 		}
-		for i := range groupEventData.MemberShip.RemovedDevices {
-			device := groupEventData.MemberShip.RemovedDevices[i]
-			glog.Infof("Get delete devices msg , device : (%s)", device.ID)
-			deleteDevice(device.ID)
-		}
-		return err
-	default:
-		return nil
+		m.FinishedInitLoad = true
+	} else {
+		glog.Warningf("Device NOT FOUND.")
 	}
 }
 

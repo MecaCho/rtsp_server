@@ -25,7 +25,7 @@ type GobSample struct {
 	Sync     bool
 }
 
-func main() {
+func main_() {
 	var saveGob bool
 	var url string
 	var maxgop int

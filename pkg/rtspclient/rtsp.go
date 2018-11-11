@@ -423,8 +423,9 @@ func ParseMedia(header string) []string {
 				dims = append(dims, v)
 			}
 			if len(dims) == 2 {
-				VideoWidth = dims[0]
-				VideoHeight = dims[1]
+				//VideoWidth = dims[0]
+				//VideoHeight = dims[1]
+				fmt.Println(dims[0], dims[1])
 			}
 		}
 	}

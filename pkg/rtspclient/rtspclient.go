@@ -96,16 +96,16 @@ func genMsg(method,url,usr,nonce,responce string) string{
 }
 
 //CheckMain ...
-func CheckMain(address, url string)  (string,error){
-	deviceRealURL := url
+func CheckMain(rtsp_url string)  (string,error){
+	deviceRealURL := rtsp_url
 	if len(strings.Split(deviceRealURL,"@")) != 2{
 		logURL :=  deviceRealURL
-		rtspClient, err := NewRTSPClient(address, deviceRealURL)
-		rtspClient.CHECKLOG = fmt.Sprintf("Connect to (%s) , send message to (%s) :", address, logURL)
+		rtspClient, err := NewRTSPClient(deviceRealURL)
+		rtspClient.CHECKLOG = fmt.Sprintf("Connect to (%s) , send message to (%s) :", rtspClient.address, logURL)
 		if err != nil {
 			return rtspClient.CHECKLOG,fmt.Errorf("Connect rtsp error :%s",err.Error())
 		}
-		_, _,respCode,err := rtspClient.GetRealmNonce(address,deviceRealURL,USRAGENT,1)
+		_, _,respCode,err := rtspClient.GetRealmNonce(rtspClient.address,deviceRealURL,USRAGENT,1)
 		rtspClient.CHECKLOG += fmt.Sprintf(" DESCRIBE --> %s , ",respCode)
 		if err != nil {
 			if strings.Contains(respCode, "200") {
@@ -120,13 +120,13 @@ func CheckMain(address, url string)  (string,error){
 	pwd := strings.Split(Credentials,":")[1]
 	usr := strings.Split(Credentials,":")[0]
 
-	rtspClient, err := NewRTSPClient(address,deviceRealURL)
-	rtspClient.CHECKLOG = fmt.Sprintf("Connect to (%s) , send message to (%s) :",address,logURL)
+	rtspClient, err := NewRTSPClient(deviceRealURL)
+	rtspClient.CHECKLOG = fmt.Sprintf("Connect to (%s) , send message to (%s) :",rtspClient.address,logURL)
 	if err != nil {
 		return rtspClient.CHECKLOG,fmt.Errorf("Connect rtsp error :%s",err.Error())
 	}
 
-	realm, nonce,respCode,err := rtspClient.GetRealmNonce(address,deviceRealURL,USRAGENT,1)
+	realm, nonce,respCode,err := rtspClient.GetRealmNonce(rtspClient.address,deviceRealURL,USRAGENT,1)
 	rtspClient.CHECKLOG += fmt.Sprintf(" DESCRIBE --> %s , ",respCode)
 	if err != nil{
 		if strings.Contains(respCode,"200") {
@@ -137,7 +137,7 @@ func CheckMain(address, url string)  (string,error){
 
 	resp := buildRequest("OPTIONS", realm, nonce,deviceRealURL,pwd,usr)
 	options := genMsg("OPTIONS",logURL,usr,nonce,resp)
-	_,responce,err := rtspClient.doRequest(address,options)
+	_,responce,err := rtspClient.doRequest(rtspClient.address,options)
 	rtspClient.CHECKLOG += fmt.Sprintf(" OPTIONS --> %s . ",responce)
 	if err != nil{
 		return rtspClient.CHECKLOG,fmt.Errorf("doRequest error : %q , Reponce : (%q)",err,responce)
@@ -145,7 +145,7 @@ func CheckMain(address, url string)  (string,error){
 
 	desResp := buildRequest("DESCRIBE", realm, nonce,logURL,pwd,usr)
 	des := genMsg("DESCRIBE",logURL,usr,nonce,desResp)
-	_,ret,err := rtspClient.doRequest(address,des)
+	_,ret,err := rtspClient.doRequest(rtspClient.address,des)
 	rtspClient.CHECKLOG += fmt.Sprintf(" DESCRIBE --> %s . ",ret)
 	if strings.Contains(ret,"200 OK"){
 		return rtspClient.CHECKLOG,nil
@@ -153,35 +153,27 @@ func CheckMain(address, url string)  (string,error){
 	return rtspClient.CHECKLOG,fmt.Errorf("doRequest error : %q , Reponce : (%q)",err,ret)
 }
 
-func (this *RTSPClient) ParseCameraUrl(rtsp_url string) bool {
-
+func (this *RTSPClient) ParseCameraUrl(rtsp_url string) {
+	this.url = rtsp_url
 	u, err := url.Parse(rtsp_url)
 	if err != nil {
-		return false
+		fmt.Println(err.Error())
 	}
-	phost := strings.Split(u.Host, ":")
+	this.address = u.Host
+	phost := strings.Split(this.address, ":")
 	this.host = phost[0]
 	if len(phost) == 2 {
 		this.port = phost[1]
 	} else {
 		this.port = "554"
 	}
-	this.login = u.User.Username()
-	this.password, this.auth = u.User.Password()
-	if u.RawQuery != "" {
-		this.uri = "rtsp://" + this.host + ":" + this.port + u.Path + "?" + string(u.RawQuery)
-	} else {
-		this.uri = "rtsp://" + this.host + ":" + this.port + u.Path
-	}
-	return true
 }
 
 //NewRTSPClient ...
-func NewRTSPClient(address,url string) (*RTSPClient, error) {
+func NewRTSPClient(url string) (*RTSPClient, error) {
 	rtsp := new(RTSPClient)
-	rtsp.address = address
-	rtsp.url = url
-	rtspcon,err := net.DialTimeout("tcp", address,  10*time.Second)
+	rtsp.ParseCameraUrl(url)
+	rtspcon,err := net.DialTimeout("tcp", rtsp.address,  10*time.Second)
 	if err != nil {
 		return rtsp, fmt.Errorf("connect to remote camera err : %s", err.Error())
 	}
@@ -190,9 +182,16 @@ func NewRTSPClient(address,url string) (*RTSPClient, error) {
 }
 
 func main(){
-	log, err := CheckMain("100.114.234.225:554", "")
-	if err != nil{
-		fmt.Printf(err.Error())
+	u, err := url.Parse("rtsp://admin:123456@100.114.234.225:554/mpeg4cif.sdp")
+	//&url.URL{Scheme:"rtsp", Opaque:"", User:(*url.Userinfo)(0xc42007a510), Host:"100.114.234.225:554", Path:"/mpeg4cif.sdp", RawPath:"", ForceQuery:false, RawQuery:"", Fragment:""}
+	//Process finished with exit code 0
+	if err != nil {
+		fmt.Println(err.Error())
 	}
-	fmt.Println(log)
+	fmt.Printf("%#v", u)
+	//log, err := CheckMain("rtsp://admin:123456@100.114.234.225:554/mpeg4cif.sdp")
+	//if err != nil{
+	//	fmt.Printf(err.Error())
+	//}
+	//fmt.Println(log)
 }
