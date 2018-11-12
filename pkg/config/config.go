@@ -18,9 +18,9 @@ type config struct {
 
 var CKconfig config
 var (
-	TopicGetDevices       = fmt.Sprintf("node/%s/membership/get", CKconfig.NodeID)
-	TopicGetDevicesResult = fmt.Sprintf("node/%s/membership/get/result", CKconfig.NodeID)
-	TopicUpdatedDevices   = fmt.Sprintf("node/%s/update", CKconfig.NodeID)
+	TopicGetDevices       = fmt.Sprintf("$hw/events/node/%s/membership/get", CKconfig.NodeID)
+	TopicGetDevicesResult = fmt.Sprintf("$hw/events/node/%s/membership/get/result", CKconfig.NodeID)
+	TopicUpdatedDevices   = fmt.Sprintf("$hw/events/node/%s/updated", CKconfig.NodeID)
 )
 
 func init() {
@@ -30,16 +30,16 @@ func init() {
 	flag.IntVar(&CKconfig.MqttRetries, "mqtt-retry-time", 60, "mqtt client retry times.")
 	flag.BoolVar(&CKconfig.Remote, "check-remote-camera", false, "check real camera.")
 	flag.Parse()
-	TopicGetDevices = fmt.Sprintf("node/%s/membership/get", CKconfig.NodeID)
-	TopicGetDevicesResult = fmt.Sprintf("node/%s/membership/get/result", CKconfig.NodeID)
-	TopicUpdatedDevices = fmt.Sprintf("node/%s/update", CKconfig.NodeID)
+	TopicGetDevices = fmt.Sprintf("$hw/events/node/%s/membership/get", CKconfig.NodeID)
+	TopicGetDevicesResult = fmt.Sprintf("$hw/events/node/%s/membership/get/result", CKconfig.NodeID)
+	TopicUpdatedDevices = fmt.Sprintf("$hw/events/node/%s/updated", CKconfig.NodeID)
 }
 
 var (
-	TopicUpdatedDevice = "device/%s/update"
-	TopicDeletedDevice = "device/%s/delete"
+	TopicUpdatedDevice = "$hw/events/device/%s/updated"
+	TopicDeletedDevice = "$hw/events/device/%s/deleted"
 
-	TopicUpdateTwinDevice = "device/%s/twin/update"
+	TopicUpdateTwinDevice = "$hw/events/device/%s/twin/updated"
 
 	DeviceTwinEventType  = "device_twin"
 	UpdatedOperationType = "update"

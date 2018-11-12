@@ -3,7 +3,7 @@ package model
 type Device struct {
 	ID           string               `json:"id"`
 	Name         string               `json:"name"`
-	State        bool                 `json:"state"`
+	State        string                 `json:"state"`
 	CameraStatus string               `json:"camera_status"`
 	Attributes   map[string]Attribute `json:"attributes"`
 }
@@ -19,9 +19,9 @@ type GroupMembershipEvent struct {
 }
 
 type MemberShip struct {
-	Devices        []Device `json:"devices"`
-	AddedDevices   []Device `json:"added_devices"`
-	RemovedDevices []Device `json:"removed_devices"`
+	Devices        []Device `json:"devices, omitempty"`
+	AddedDevices   []Device `json:"added_devices, omitempty"`
+	RemovedDevices []Device `json:"removed_devices, omitempty"`
 }
 
 type BaseEvent struct {
@@ -44,7 +44,7 @@ type DeviceTwinEvent struct {
 	DeviceID   string `json:"device_id"`
 	Operation  string `json:"operation"`
 	Timestamp  int64  `json:"timestamp"`
-	Twin       Twin   `json:"twin"`
+	Twin      map[string]Twin   `json:"twin"`
 }
 
 type Twin struct {

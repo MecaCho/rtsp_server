@@ -12,7 +12,6 @@ import (
 	"rtsp_server/pkg/model"
 	"rtsp_server/pkg/mqtt_client"
 	"rtsp_server/pkg/rtspclient"
-	"strconv"
 	"sync"
 	"time"
 )
@@ -221,8 +220,12 @@ func (m *Manager) CheckWork() {
 		deviceTwinData.DeviceID = v.ID
 		deviceTwinData.Operation = config.UpdatedOperationType
 		deviceTwinData.Timestamp = time.Now().UnixNano()
-		deviceTwinData.Twin.Actual = make(map[string]string)
-		deviceTwinData.Twin.Actual["state"] = strconv.FormatBool(v.State)
+		twin := model.Twin{}
+		twin.Actual = make(map[string]string)
+		twin.Actual["value"] = v.CameraStatus
+		deviceTwinData.Twin = make(map[string]model.Twin)
+
+		deviceTwinData.Twin["cameraStatus"] = twin
 
 		deviceJSON, _ := json.Marshal(deviceTwinData)
 		updatedDeviceTwinTopic := fmt.Sprintf(config.TopicUpdateTwinDevice, deviceTwinData.DeviceID)
@@ -244,7 +247,7 @@ func (m *Manager) DealMembershipMsg(topic string, payload []byte) {
 	groupEventData := &model.GroupMembershipEvent{}
 	err = json.Unmarshal(payload, groupEventData)
 	if err != nil {
-		glog.Errorf("Json parse topic (%s) ERROR.", topic)
+		glog.Errorf("Json parse topic (%s) ERROR, %s.", topic, err.Error())
 	}
 	if groupEventData.MemberShip.Devices != nil {
 		for i := range groupEventData.MemberShip.Devices {
