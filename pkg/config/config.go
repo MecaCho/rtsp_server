@@ -20,7 +20,7 @@ var CKconfig config
 var (
 	TopicGetDevices       = fmt.Sprintf("$hw/events/node/%s/membership/get", CKconfig.NodeID)
 	TopicGetDevicesResult = fmt.Sprintf("$hw/events/node/%s/membership/get/result", CKconfig.NodeID)
-	TopicUpdatedDevices   = fmt.Sprintf("$hw/events/node/%s/updated", CKconfig.NodeID)
+	TopicUpdatedDevices   = fmt.Sprintf("$hw/events/node/%s/membership/updated", CKconfig.NodeID)
 )
 
 func init() {
@@ -32,7 +32,7 @@ func init() {
 	flag.Parse()
 	TopicGetDevices = fmt.Sprintf("$hw/events/node/%s/membership/get", CKconfig.NodeID)
 	TopicGetDevicesResult = fmt.Sprintf("$hw/events/node/%s/membership/get/result", CKconfig.NodeID)
-	TopicUpdatedDevices = fmt.Sprintf("$hw/events/node/%s/updated", CKconfig.NodeID)
+	TopicUpdatedDevices = fmt.Sprintf("$hw/events/node/%s/membership/updated", CKconfig.NodeID)
 }
 
 var (

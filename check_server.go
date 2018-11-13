@@ -305,7 +305,7 @@ func (m *Manager) subscribeNodeUpdate(NodeID string) {
 
 //DealUpdateDevices ...
 func (m *Manager) DealUpdateDevices(msg []byte) {
-	glog.Infof("Subscribed TopicUpdatedDevices with msg: (%q) successfully ,updating all devices info in node\n", string(msg))
+	glog.Infof("Subscribed UpdatedDevices topic with msg: (%q) successfully ,updating all devices info in node\n", string(msg))
 	groupEventData := model.GroupMembershipEvent{}
 	err := json.Unmarshal(msg, &groupEventData)
 	if err != nil {
@@ -313,12 +313,12 @@ func (m *Manager) DealUpdateDevices(msg []byte) {
 	}
 	for i := range groupEventData.MemberShip.AddedDevices {
 		device := groupEventData.MemberShip.AddedDevices[i]
-		glog.Infof("subscribe add device id:%s", device.ID)
+		glog.Infof("Get membership update msg, add device (%s)", device.ID)
 		addDevice(device.ID, device)
 	}
 	for i := range groupEventData.MemberShip.RemovedDevices {
 		device := groupEventData.MemberShip.RemovedDevices[i]
-		glog.Infof("Begining deleting device (%q)", device.ID)
+		glog.Infof("Get membership update msg, deleting device (%q)", device.ID)
 		deleteDevice(device.ID)
 	}
 	syncMap.Range(func(key, value interface{}) bool {
