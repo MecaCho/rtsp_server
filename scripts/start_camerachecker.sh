@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 /usr/bin/ief-camera-checker \
                 --alsologtostderr \
                 --mqtt-retry-time=3 \
