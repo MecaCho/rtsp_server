@@ -226,6 +226,10 @@ func (m *Manager) CheckWork() {
 		deviceTwinData.Twin = make(map[string]model.Twin)
 
 		deviceTwinData.Twin["cameraStatus"] = twin
+		twin_state := model.Twin{}
+		twin_state.Actual = make(map[string]string)
+		twin_state.Actual["value"] = v.State
+		deviceTwinData.Twin["state"] = twin_state
 
 		deviceJSON, _ := json.Marshal(deviceTwinData)
 		updatedDeviceTwinTopic := fmt.Sprintf(config.TopicUpdateTwinDevice, deviceTwinData.DeviceID)

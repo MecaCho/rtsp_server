@@ -39,7 +39,7 @@ var (
 	TopicUpdatedDevice = "$hw/events/device/%s/updated"
 	TopicDeletedDevice = "$hw/events/device/%s/deleted"
 
-	TopicUpdateTwinDevice = "$hw/events/device/%s/twin/updated"
+	TopicUpdateTwinDevice = "$hw/events/device/%s/twin/update"
 
 	DeviceTwinEventType  = "device_twin"
 	UpdatedOperationType = "update"
