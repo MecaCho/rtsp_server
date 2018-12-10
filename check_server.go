@@ -128,8 +128,10 @@ func (m *Manager) CheckAllCameraStatus() {
 			}
 			if ret {
 				copyDev.CameraStatus = config.CameraStatusOn
+				copyDev.State = config.CameraStateOn
 			} else {
 				copyDev.CameraStatus = config.CameraStatusOff
+				copyDev.State = config.CameraStateOff
 			}
 			addDevice(deviceId, copyDev)
 			done <- ret
