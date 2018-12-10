@@ -172,7 +172,7 @@ func (this *RTSPClient) ParseCameraUrl(rtsp_url string) {
 func NewRTSPClient(url string) (*RTSPClient, error) {
 	rtsp := new(RTSPClient)
 	rtsp.ParseCameraUrl(url)
-	rtspcon, err := net.DialTimeout("tcp", rtsp.address, 10*time.Second)
+	rtspcon, err := net.DialTimeout("tcp", rtsp.address, 5*time.Second)
 	if err != nil {
 		return rtsp, fmt.Errorf("connect to remote camera err : %s", err.Error())
 	}
