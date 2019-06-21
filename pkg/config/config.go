@@ -49,6 +49,6 @@ var (
 const (
 	CameraStatusOn  = "Online"
 	CameraStatusOff = "Offline"
-	CameraStateOn = "true"
-	CameraStateOff = "false"
+	CameraStateOn   = "true"
+	CameraStateOff  = "false"
 )
